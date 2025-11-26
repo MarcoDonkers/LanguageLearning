@@ -11,7 +11,7 @@ export default defineConfig({
     include: ['tests/unit/**/*.test.ts'],
     exclude: ['tests/e2e/**/*', 'node_modules/**/*'],
     coverage: {
-      provider: 'c8',
+      provider: 'v8',
       reporter: ['text', 'json', 'html'],
       exclude: [
         'node_modules/',

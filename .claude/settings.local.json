@@ -13,7 +13,12 @@
       "Bash(dir:*)",
       "Bash(findstr:*)",
       "Bash(npm run test:e2e:*)",
-      "Bash(netstat:*)"
+      "Bash(netstat:*)",
+      "Bash(timeout /t 5)",
+      "WebFetch(domain:localhost)",
+      "Bash(ping:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npx cypress verify:*)"
     ],
     "deny": [],
     "ask": []

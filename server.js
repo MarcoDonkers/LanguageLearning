@@ -11,7 +11,7 @@ const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
-  createServer(async (req, res) => {
+  const server = createServer(async (req, res) => {
     try {
       const parsedUrl = parse(req.url, true);
       await handle(req, res, parsedUrl);
@@ -28,4 +28,22 @@ app.prepare().then(() => {
     .listen(port, () => {
       console.log(`> Ready on http://${hostname}:${port}`);
     });
+
+  // Graceful shutdown handlers
+  const gracefulShutdown = (signal) => {
+    console.log(`\n${signal} received, closing server gracefully...`);
+    server.close(() => {
+      console.log('Server closed');
+      process.exit(0);
+    });
+
+    // Force close after 10 seconds if graceful shutdown fails
+    setTimeout(() => {
+      console.error('Forcing shutdown after timeout');
+      process.exit(1);
+    }, 10000);
+  };
+
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 });

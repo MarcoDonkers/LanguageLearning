@@ -7,9 +7,9 @@ let initialized = false;
 
 function getDatabase(): Database.Database {
   if (!dbInstance) {
-    const dbPath = process.env.NODE_ENV === 'test'
-      ? path.join(process.cwd(), 'data', 'test.db')
-      : path.join(process.cwd(), 'data', 'database.db');
+    const dbPath = process.env.NODE_ENV === 'production'
+      ? path.join(process.cwd(), 'data', 'database.db')
+      : path.join(process.cwd(), 'data', 'test.db');
 
     // Ensure data directory exists
     const dataDir = path.dirname(dbPath);
@@ -49,6 +49,18 @@ export function initializeDatabase() {
   } catch (error) {
     console.error('Failed to initialize database:', error);
     throw error;
+  }
+}
+
+/**
+ * Close the database connection
+ * Useful for tests that need to reset the database
+ */
+export function closeDatabase() {
+  if (dbInstance) {
+    dbInstance.close();
+    dbInstance = null;
+    initialized = false;
   }
 }
 
