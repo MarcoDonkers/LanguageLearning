@@ -27,10 +27,17 @@ export interface WordListWithStats extends WordList {
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
+export type QuizDirection = 'dutch-to-english' | 'english-to-dutch' | 'mixed';
+
 export interface QuizSubmission {
   wordId: number;
   userAnswer: string;
   difficulty: Difficulty;
+  direction: QuizDirection;
+}
+
+export interface QuizWord extends Word {
+  currentDirection?: 'dutch-to-english' | 'english-to-dutch';
 }
 
 export interface QuizResult {

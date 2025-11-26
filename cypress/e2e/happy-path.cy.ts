@@ -41,7 +41,7 @@ describe('Happy Path - Complete User Journey', () => {
 
     // 8. Start quiz
     cy.contains('button', /start quiz/i).click();
-    cy.url().should('match', /\/quiz$/);
+    cy.url().should('match', /\/quiz\?direction=/);
 
     // 9-11. Answer all three words
     const answerMap: { [key: string]: string } = {

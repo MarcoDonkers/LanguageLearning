@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server';
 import { getWordById, updateWordAfterReview } from '@/lib/db/queries';
 import { calculateNextReview } from '@/lib/spaced-repetition/algorithm';
 import { isAnswerCorrect } from '@/lib/utils';
-import type { QuizSubmission, QuizResult } from '@/types';
+import type { QuizSubmission, QuizResult, QuizDirection } from '@/types';
 
 // POST /api/quiz/submit - Submit quiz answer with difficulty
 export async function POST(request: Request) {
   try {
     const body: QuizSubmission = await request.json();
-    const { wordId, userAnswer, difficulty } = body;
+    const { wordId, userAnswer, difficulty, direction } = body;
 
     // Validation
     if (!wordId || typeof wordId !== 'number') {
@@ -32,6 +32,14 @@ export async function POST(request: Request) {
       );
     }
 
+    const validDirections: QuizDirection[] = ['dutch-to-english', 'english-to-dutch', 'mixed'];
+    if (!direction || !validDirections.includes(direction)) {
+      return NextResponse.json(
+        { error: 'Valid direction is required' },
+        { status: 400 }
+      );
+    }
+
     // Get the word
     const word = getWordById(wordId);
     if (!word) {
@@ -41,8 +49,13 @@ export async function POST(request: Request) {
       );
     }
 
+    // Determine correct answer based on direction
+    const correctAnswer = direction === 'english-to-dutch'
+      ? word.dutch_word
+      : word.english_translation;
+
     // Check if answer is correct
-    const correct = isAnswerCorrect(userAnswer, word.english_translation);
+    const correct = isAnswerCorrect(userAnswer, correctAnswer);
 
     // Calculate next review using spaced repetition algorithm
     const { nextIntervalMinutes, newEaseMultiplier, nextReviewDate } = calculateNextReview(
@@ -63,7 +76,7 @@ export async function POST(request: Request) {
     // Return result
     const result: QuizResult = {
       correct,
-      correctAnswer: word.english_translation,
+      correctAnswer,
       nextReviewDate: nextReviewDate.toISOString(),
     };
 

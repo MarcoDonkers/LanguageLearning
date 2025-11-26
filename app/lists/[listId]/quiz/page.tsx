@@ -1,20 +1,22 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import type { Word, QuizResult, Difficulty } from '@/types';
+import type { Word, QuizResult, Difficulty, QuizDirection, QuizWord } from '@/types';
 
 export default function QuizPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const listId = parseInt(params.listId as string);
+  const direction = (searchParams.get('direction') || 'dutch-to-english') as QuizDirection;
 
-  const [dueWords, setDueWords] = useState<Word[]>([]);
+  const [dueWords, setDueWords] = useState<QuizWord[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState('');
   const [result, setResult] = useState<QuizResult | null>(null);
@@ -29,8 +31,19 @@ export default function QuizPage() {
     try {
       const response = await fetch(`/api/words/due?listId=${listId}`);
       if (response.ok) {
-        const data = await response.json();
-        setDueWords(data);
+        const data: Word[] = await response.json();
+
+        // If mixed mode, randomly assign direction to each word
+        const wordsWithDirection: QuizWord[] = direction === 'mixed'
+          ? data.map(word => ({
+              ...word,
+              currentDirection: Math.random() < 0.5
+                ? 'dutch-to-english'
+                : 'english-to-dutch'
+            }))
+          : data;
+
+        setDueWords(wordsWithDirection);
 
         if (data.length === 0) {
           router.push(`/lists/${listId}`);
@@ -43,12 +56,36 @@ export default function QuizPage() {
     }
   };
 
+  // Helper functions for direction logic
+  const getWordDirection = (word: QuizWord): 'dutch-to-english' | 'english-to-dutch' => {
+    if (direction === 'mixed') {
+      return word.currentDirection || 'dutch-to-english';
+    }
+    return direction;
+  };
+
+  const getQuestionText = (word: QuizWord): string => {
+    const wordDirection = getWordDirection(word);
+    return wordDirection === 'dutch-to-english'
+      ? word.dutch_word
+      : word.english_translation;
+  };
+
+  const getPromptText = (word: QuizWord): string => {
+    const wordDirection = getWordDirection(word);
+    return wordDirection === 'dutch-to-english'
+      ? 'Translate to English'
+      : 'Translate to Dutch';
+  };
+
   const handleSubmitAnswer = async () => {
     if (!userAnswer.trim() || submitting) return;
 
     setSubmitting(true);
 
     try {
+      const wordDirection = getWordDirection(currentWord);
+
       const response = await fetch('/api/quiz/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -56,6 +93,7 @@ export default function QuizPage() {
           wordId: currentWord.id,
           userAnswer,
           difficulty: 'medium', // Default, will be updated after user selects
+          direction: wordDirection,
         }),
       });
 
@@ -74,6 +112,8 @@ export default function QuizPage() {
     if (!result) return;
 
     try {
+      const wordDirection = getWordDirection(currentWord);
+
       // Submit again with the selected difficulty
       const response = await fetch('/api/quiz/submit', {
         method: 'POST',
@@ -82,6 +122,7 @@ export default function QuizPage() {
           wordId: currentWord.id,
           userAnswer,
           difficulty,
+          direction: wordDirection,
         }),
       });
 
@@ -170,10 +211,10 @@ export default function QuizPage() {
         <Card className="shadow-2xl">
           <CardHeader className="text-center pb-8">
             <CardTitle className="text-sm uppercase tracking-wide text-gray-500 mb-4">
-              Translate to English
+              {getPromptText(currentWord)}
             </CardTitle>
             <div className="text-5xl font-heading font-bold text-primary-600">
-              {currentWord.dutch_word}
+              {getQuestionText(currentWord)}
             </div>
           </CardHeader>
 

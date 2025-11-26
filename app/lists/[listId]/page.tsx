@@ -7,7 +7,7 @@ import { ArrowLeft, Plus, Pencil, Trash2, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import type { WordList, Word } from '@/types';
+import type { WordList, Word, QuizDirection } from '@/types';
 
 interface ListWithWords extends WordList {
   words: Word[];
@@ -25,6 +25,7 @@ export default function ListDetailPage() {
   const [newEnglishWord, setNewEnglishWord] = useState('');
   const [editingWord, setEditingWord] = useState<Word | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [quizDirection, setQuizDirection] = useState<QuizDirection>('dutch-to-english');
 
   useEffect(() => {
     fetchList();
@@ -158,12 +159,48 @@ export default function ListDetailPage() {
           </div>
 
           {dueWords && dueWords.length > 0 && (
-            <Link href={`/lists/${listId}/quiz`}>
-              <Button size="lg" className="gap-2">
-                <Play className="w-5 h-5" />
-                Start Quiz ({dueWords.length} words)
-              </Button>
-            </Link>
+            <div className="space-y-4">
+              <Card>
+                <CardContent className="p-4">
+                  <p className="text-sm font-medium text-gray-700 mb-3">
+                    Quiz Direction:
+                  </p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <Button
+                      variant={quizDirection === 'dutch-to-english' ? 'default' : 'outline'}
+                      className="h-16 flex-col"
+                      onClick={() => setQuizDirection('dutch-to-english')}
+                    >
+                      <span className="font-bold">Dutch → English</span>
+                      <span className="text-xs text-gray-500">Classic mode</span>
+                    </Button>
+                    <Button
+                      variant={quizDirection === 'english-to-dutch' ? 'default' : 'outline'}
+                      className="h-16 flex-col"
+                      onClick={() => setQuizDirection('english-to-dutch')}
+                    >
+                      <span className="font-bold">English → Dutch</span>
+                      <span className="text-xs text-gray-500">Reverse mode</span>
+                    </Button>
+                    <Button
+                      variant={quizDirection === 'mixed' ? 'default' : 'outline'}
+                      className="h-16 flex-col"
+                      onClick={() => setQuizDirection('mixed')}
+                    >
+                      <span className="font-bold">Mixed</span>
+                      <span className="text-xs text-gray-500">Random both ways</span>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Link href={`/lists/${listId}/quiz?direction=${quizDirection}`}>
+                <Button size="lg" className="w-full gap-2">
+                  <Play className="w-5 h-5" />
+                  Start Quiz ({dueWords.length} words)
+                </Button>
+              </Link>
+            </div>
           )}
         </div>
 
