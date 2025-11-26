@@ -5,6 +5,9 @@
 
 # testing
 /coverage
+test-results/
+playwright-report/
+.vitest/
 
 # next.js
 /.next/
@@ -40,6 +43,9 @@ next-env.d.ts
 data/database.db
 data/database.db-shm
 data/database.db-wal
+data/test.db
+data/test.db-shm
+data/test.db-wal
 
 # iisnode
 iisnode/

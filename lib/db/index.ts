@@ -7,7 +7,9 @@ let initialized = false;
 
 function getDatabase(): Database.Database {
   if (!dbInstance) {
-    const dbPath = path.join(process.cwd(), 'data', 'database.db');
+    const dbPath = process.env.NODE_ENV === 'test'
+      ? path.join(process.cwd(), 'data', 'test.db')
+      : path.join(process.cwd(), 'data', 'database.db');
 
     // Ensure data directory exists
     const dataDir = path.dirname(dbPath);
