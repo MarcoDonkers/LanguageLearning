@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
+import { Plus, Trash2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ export default function Home() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [newListDescription, setNewListDescription] = useState('');
+  const [listToDelete, setListToDelete] = useState<WordListWithStats | null>(null);
 
   useEffect(() => {
     fetchLists();
@@ -53,6 +54,25 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Failed to create list:', error);
+    }
+  };
+
+  const handleDeleteList = async () => {
+    if (!listToDelete) return;
+
+    try {
+      const response = await fetch(`/api/lists/${listToDelete.id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setLists(lists.filter((l) => l.id !== listToDelete.id));
+        setListToDelete(null);
+      } else {
+        console.error('Failed to delete list');
+      }
+    } catch (error) {
+      console.error('Error deleting list:', error);
     }
   };
 
@@ -143,33 +163,88 @@ export default function Home() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {lists.map((list) => (
-              <Link href={`/lists/${list.id}`} key={list.id}>
-                <Card className="h-full cursor-pointer transition-transform hover:scale-105">
-                  <CardHeader>
-                    <CardTitle className="text-xl">{list.name}</CardTitle>
-                    {list.description && (
-                      <CardDescription>{list.description}</CardDescription>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 text-sm text-gray-600">
-                      <div className="flex justify-between">
-                        <span>Total words:</span>
-                        <span className="font-semibold text-primary-600">
-                          {list.word_count}
-                        </span>
+              <div key={list.id} className="relative group">
+                <Link href={`/lists/${list.id}`} className="block h-full">
+                  <Card className="h-full cursor-pointer transition-transform hover:scale-105">
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div className="pr-8">
+                          <CardTitle className="text-xl">{list.name}</CardTitle>
+                          {list.description && (
+                            <CardDescription>{list.description}</CardDescription>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex justify-between">
-                        <span>Due for review:</span>
-                        <span className="font-semibold text-secondary-600">
-                          {list.due_count}
-                        </span>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2 text-sm text-gray-600">
+                        <div className="flex justify-between">
+                          <span>Total words:</span>
+                          <span className="font-semibold text-primary-600">
+                            {list.word_count}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Due for review:</span>
+                          <span className="font-semibold text-secondary-600">
+                            {list.due_count}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+                    </CardContent>
+                  </Card>
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500 hover:bg-red-50"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setListToDelete(list);
+                  }}
+                  aria-label="Delete list"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </Button>
+              </div>
             ))}
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {listToDelete && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-md animate-in fade-in zoom-in-95 duration-200">
+              <CardHeader>
+                <div className="flex items-center gap-3 text-red-600 mb-2">
+                  <div className="p-2 bg-red-100 rounded-full">
+                    <AlertTriangle className="w-6 h-6" />
+                  </div>
+                  <CardTitle>Delete List?</CardTitle>
+                </div>
+                <CardDescription>
+                  Are you sure you want to delete "{listToDelete.name}"? This action cannot be undone and will delete all words in this list.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-end gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setListToDelete(null)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="danger"
+                    onClick={handleDeleteList}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    Delete List
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>

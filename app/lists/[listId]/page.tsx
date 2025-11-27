@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Pencil, Trash2, Play } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Trash2, Play, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,14 @@ import type { WordList, Word, QuizDirection } from '@/types';
 
 interface ListWithWords extends WordList {
   words: Word[];
+}
+
+type SortKey = 'dutch_word' | 'english_translation' | 'notes' | 'review_count';
+type SortDirection = 'asc' | 'desc';
+
+interface SortConfig {
+  key: SortKey;
+  direction: SortDirection;
 }
 
 export default function ListDetailPage() {
@@ -27,6 +35,10 @@ export default function ListDetailPage() {
   const [editingWord, setEditingWord] = useState<Word | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [quizDirection, setQuizDirection] = useState<QuizDirection>('dutch-to-english');
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    key: 'dutch_word',
+    direction: 'asc',
+  });
 
   useEffect(() => {
     fetchList();
@@ -115,15 +127,62 @@ export default function ListDetailPage() {
     }
   };
 
-  const filteredWords = list?.words.filter(
-    (word) =>
-      word.dutch_word.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      word.english_translation.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleSort = (key: SortKey) => {
+    setSortConfig((current) => ({
+      key,
+      direction:
+        current.key === key && current.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
+  const sortedWords = useMemo(() => {
+    if (!list?.words) return [];
+
+    let words = [...list.words];
+
+    // Filter first
+    if (searchTerm) {
+      const lowerTerm = searchTerm.toLowerCase();
+      words = words.filter(
+        (word) =>
+          word.dutch_word.toLowerCase().includes(lowerTerm) ||
+          word.english_translation.toLowerCase().includes(lowerTerm)
+      );
+    }
+
+    // Then sort
+    return words.sort((a, b) => {
+      const aValue = a[sortConfig.key];
+      const bValue = b[sortConfig.key];
+
+      if (aValue === null && bValue === null) return 0;
+      if (aValue === null) return 1;
+      if (bValue === null) return -1;
+
+      if (aValue < bValue) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  }, [list?.words, searchTerm, sortConfig]);
 
   const dueWords = list?.words.filter(
     (word) => new Date(word.next_review_date) <= new Date()
   );
+
+  const SortIcon = ({ columnKey }: { columnKey: SortKey }) => {
+    if (sortConfig.key !== columnKey) {
+      return <ArrowUpDown className="w-4 h-4 ml-1 text-gray-400 opacity-0 group-hover:opacity-50" />;
+    }
+    return sortConfig.direction === 'asc' ? (
+      <ArrowUp className="w-4 h-4 ml-1 text-primary-600" />
+    ) : (
+      <ArrowDown className="w-4 h-4 ml-1 text-primary-600" />
+    );
+  };
 
   if (loading) {
     return (
@@ -308,24 +367,48 @@ export default function ListDetailPage() {
         )}
 
         {/* Words Table */}
-        {filteredWords && filteredWords.length > 0 ? (
+        {sortedWords && sortedWords.length > 0 ? (
           <Card>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="border-b-2 border-primary-100">
                     <tr>
-                      <th className="text-left p-4 font-semibold text-gray-700">
-                        Dutch
+                      <th
+                        className="text-left p-4 font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 group transition-colors"
+                        onClick={() => handleSort('dutch_word')}
+                      >
+                        <div className="flex items-center">
+                          Dutch
+                          <SortIcon columnKey="dutch_word" />
+                        </div>
                       </th>
-                      <th className="text-left p-4 font-semibold text-gray-700">
-                        English
+                      <th
+                        className="text-left p-4 font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 group transition-colors"
+                        onClick={() => handleSort('english_translation')}
+                      >
+                        <div className="flex items-center">
+                          English
+                          <SortIcon columnKey="english_translation" />
+                        </div>
                       </th>
-                      <th className="text-left p-4 font-semibold text-gray-700">
-                        Notes
+                      <th
+                        className="text-left p-4 font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 group transition-colors"
+                        onClick={() => handleSort('notes')}
+                      >
+                        <div className="flex items-center">
+                          Notes
+                          <SortIcon columnKey="notes" />
+                        </div>
                       </th>
-                      <th className="text-left p-4 font-semibold text-gray-700">
-                        Reviews
+                      <th
+                        className="text-left p-4 font-semibold text-gray-700 cursor-pointer hover:bg-gray-50 group transition-colors"
+                        onClick={() => handleSort('review_count')}
+                      >
+                        <div className="flex items-center">
+                          Reviews
+                          <SortIcon columnKey="review_count" />
+                        </div>
                       </th>
                       <th className="text-right p-4 font-semibold text-gray-700">
                         Actions
@@ -333,7 +416,7 @@ export default function ListDetailPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredWords.map((word) => (
+                    {sortedWords.map((word) => (
                       <tr key={word.id} className="border-b border-gray-100">
                         {editingWord?.id === word.id ? (
                           <>
@@ -405,9 +488,9 @@ export default function ListDetailPage() {
                                 {word.review_count} (
                                 {word.review_count > 0
                                   ? Math.round(
-                                      (word.correct_count / word.review_count) *
-                                        100
-                                    )
+                                    (word.correct_count / word.review_count) *
+                                    100
+                                  )
                                   : 0}
                                 % correct)
                               </span>
