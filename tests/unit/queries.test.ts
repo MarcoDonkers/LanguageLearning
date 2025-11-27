@@ -238,6 +238,28 @@ describe('Word Queries', () => {
       expect(listAfter?.updated_at).toBeDefined();
       expect(new Date(listAfter!.updated_at).getTime()).toBeGreaterThan(0);
     });
+
+    test('Creates word with notes', () => {
+      const db = getTestDatabase();
+      const listId = createTestList(db, mockLists.basicPhrases);
+
+      const word = createWord(listId, 'hallo', 'hello', 'Common greeting');
+
+      expect(word.dutch_word).toBe('hallo');
+      expect(word.english_translation).toBe('hello');
+      expect(word.notes).toBe('Common greeting');
+    });
+
+    test('Creates word without notes (null)', () => {
+      const db = getTestDatabase();
+      const listId = createTestList(db, mockLists.basicPhrases);
+
+      const word = createWord(listId, 'hallo', 'hello');
+
+      expect(word.dutch_word).toBe('hallo');
+      expect(word.english_translation).toBe('hello');
+      expect(word.notes).toBeNull();
+    });
   });
 
   describe('getWordsByListId', () => {
@@ -307,6 +329,30 @@ describe('Word Queries', () => {
       const result = updateWord(999, 'test', 'test');
       expect(result).toBeUndefined();
     });
+
+    test('Updates word with notes', () => {
+      const db = getTestDatabase();
+      const listId = createTestList(db, mockLists.basicPhrases);
+      const wordId = createTestWord(db, listId, mockWords.hello);
+
+      const updated = updateWord(wordId, 'hoi', 'hi', 'Informal greeting');
+
+      expect(updated).toBeDefined();
+      expect(updated?.dutch_word).toBe('hoi');
+      expect(updated?.english_translation).toBe('hi');
+      expect(updated?.notes).toBe('Informal greeting');
+    });
+
+    test('Updates word to remove notes', () => {
+      const db = getTestDatabase();
+      const listId = createTestList(db, mockLists.basicPhrases);
+      const word = createWord(listId, 'hallo', 'hello', 'Original note');
+
+      const updated = updateWord(word.id, 'hallo', 'hello', '');
+
+      expect(updated).toBeDefined();
+      expect(updated?.notes).toBeNull();
+    });
   });
 
   describe('deleteWord', () => {
@@ -372,6 +418,19 @@ describe('Word Queries', () => {
       const results = searchWords(listId, 'xyz');
 
       expect(results).toEqual([]);
+    });
+
+    test('Searches notes field case-insensitive', () => {
+      const db = getTestDatabase();
+      const listId = createTestList(db, mockLists.basicPhrases);
+      createWord(listId, 'hallo', 'hello', 'Common greeting phrase');
+      createWord(listId, 'kat', 'cat', 'Animal');
+
+      const results = searchWords(listId, 'GREETING');
+
+      expect(results).toHaveLength(1);
+      expect(results[0].dutch_word).toBe('hallo');
+      expect(results[0].notes).toBe('Common greeting phrase');
     });
   });
 

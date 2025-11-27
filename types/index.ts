@@ -11,6 +11,7 @@ export interface Word {
   list_id: number;
   dutch_word: string;
   english_translation: string;
+  notes: string | null;
   created_at: string;
   next_review_date: string;
   interval_minutes: number;

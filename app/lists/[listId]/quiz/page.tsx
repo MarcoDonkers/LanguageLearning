@@ -279,6 +279,16 @@ export default function QuizPage() {
                       </div>
                     </div>
                   )}
+                  {currentWord.notes && (
+                    <div className="mt-4 pt-4 border-t border-gray-300">
+                      <div className="text-sm font-medium text-gray-700 mb-1">
+                        Notes:
+                      </div>
+                      <div className="text-sm text-gray-600 italic bg-white/50 rounded p-2">
+                        {currentWord.notes}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Difficulty Selection */}

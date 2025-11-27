@@ -23,6 +23,7 @@ export default function ListDetailPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newDutchWord, setNewDutchWord] = useState('');
   const [newEnglishWord, setNewEnglishWord] = useState('');
+  const [newNotes, setNewNotes] = useState('');
   const [editingWord, setEditingWord] = useState<Word | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [quizDirection, setQuizDirection] = useState<QuizDirection>('dutch-to-english');
@@ -59,12 +60,14 @@ export default function ListDetailPage() {
           listId,
           dutchWord: newDutchWord,
           englishTranslation: newEnglishWord,
+          notes: newNotes.trim() || null,
         }),
       });
 
       if (response.ok) {
         setNewDutchWord('');
         setNewEnglishWord('');
+        setNewNotes('');
         setShowAddForm(false);
         fetchList();
       }
@@ -83,6 +86,7 @@ export default function ListDetailPage() {
         body: JSON.stringify({
           dutchWord: editingWord.dutch_word,
           englishTranslation: editingWord.english_translation,
+          notes: editingWord.notes,
         }),
       });
 
@@ -261,7 +265,7 @@ export default function ListDetailPage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleAddWord} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Input
                     type="text"
                     placeholder="Dutch word"
@@ -276,6 +280,12 @@ export default function ListDetailPage() {
                     onChange={(e) => setNewEnglishWord(e.target.value)}
                     required
                   />
+                  <Input
+                    type="text"
+                    placeholder="Notes (optional)"
+                    value={newNotes}
+                    onChange={(e) => setNewNotes(e.target.value)}
+                  />
                 </div>
                 <div className="flex gap-3">
                   <Button type="submit">Add Word</Button>
@@ -286,6 +296,7 @@ export default function ListDetailPage() {
                       setShowAddForm(false);
                       setNewDutchWord('');
                       setNewEnglishWord('');
+                      setNewNotes('');
                     }}
                   >
                     Cancel
@@ -309,6 +320,9 @@ export default function ListDetailPage() {
                       </th>
                       <th className="text-left p-4 font-semibold text-gray-700">
                         English
+                      </th>
+                      <th className="text-left p-4 font-semibold text-gray-700">
+                        Notes
                       </th>
                       <th className="text-left p-4 font-semibold text-gray-700">
                         Reviews
@@ -346,6 +360,18 @@ export default function ListDetailPage() {
                               />
                             </td>
                             <td className="p-4">
+                              <Input
+                                value={editingWord.notes || ''}
+                                onChange={(e) =>
+                                  setEditingWord({
+                                    ...editingWord,
+                                    notes: e.target.value,
+                                  })
+                                }
+                                placeholder="Optional notes"
+                              />
+                            </td>
+                            <td className="p-4">
                               <span className="text-sm text-gray-600">
                                 {word.review_count}
                               </span>
@@ -371,6 +397,9 @@ export default function ListDetailPage() {
                               {word.dutch_word}
                             </td>
                             <td className="p-4">{word.english_translation}</td>
+                            <td className="p-4 text-gray-600">
+                              {word.notes || '-'}
+                            </td>
                             <td className="p-4">
                               <span className="text-sm text-gray-600">
                                 {word.review_count} (

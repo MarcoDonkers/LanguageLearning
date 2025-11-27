@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
+import { runMigrations } from './migrate';
 
 let dbInstance: Database.Database | null = null;
 let initialized = false;
@@ -44,6 +45,10 @@ export function initializeDatabase() {
     const schemaPath = path.join(process.cwd(), 'lib', 'db', 'schema.sql');
     const schema = fs.readFileSync(schemaPath, 'utf-8');
     db.exec(schema);
+
+    // Run migrations after schema initialization
+    runMigrations(db);
+
     initialized = true;
     console.log('Database initialized successfully');
   } catch (error) {

@@ -17,7 +17,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { dutchWord, englishTranslation } = body;
+    const { dutchWord, englishTranslation, notes } = body;
 
     if (!dutchWord || typeof dutchWord !== 'string') {
       return NextResponse.json(
@@ -33,7 +33,14 @@ export async function PUT(
       );
     }
 
-    const word = updateWord(wordId, dutchWord, englishTranslation);
+    if (notes !== undefined && notes !== null && typeof notes !== 'string') {
+      return NextResponse.json(
+        { error: 'Notes must be a string' },
+        { status: 400 }
+      );
+    }
+
+    const word = updateWord(wordId, dutchWord, englishTranslation, notes);
     if (!word) {
       return NextResponse.json(
         { error: 'Word not found' },

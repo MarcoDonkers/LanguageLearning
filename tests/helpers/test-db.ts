@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
+import { runMigrations } from '@/lib/db/migrate';
 
 const TEST_DB_PATH = path.join(process.cwd(), 'data', 'test.db');
 let testDbInstance: Database.Database | null = null;
@@ -24,6 +25,9 @@ export function initializeTestDatabase() {
   const schemaPath = path.join(process.cwd(), 'lib', 'db', 'schema.sql');
   const schema = fs.readFileSync(schemaPath, 'utf-8');
   db.exec(schema);
+
+  // Run migrations after schema initialization
+  runMigrations(db);
 }
 
 export function resetTestDatabase() {
@@ -33,6 +37,7 @@ export function resetTestDatabase() {
   db.exec(`
     DROP TABLE IF EXISTS words;
     DROP TABLE IF EXISTS word_lists;
+    DROP TABLE IF EXISTS migrations;
     DROP INDEX IF EXISTS idx_words_list_id;
     DROP INDEX IF EXISTS idx_words_next_review;
   `);

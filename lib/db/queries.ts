@@ -94,14 +94,15 @@ export function getWordById(id: number): Word | undefined {
 export function createWord(
   listId: number,
   dutchWord: string,
-  englishTranslation: string
+  englishTranslation: string,
+  notes?: string
 ): Word {
   const query = `
-    INSERT INTO words (list_id, dutch_word, english_translation)
-    VALUES (?, ?, ?)
+    INSERT INTO words (list_id, dutch_word, english_translation, notes)
+    VALUES (?, ?, ?, ?)
   `;
 
-  const result = db.prepare(query).run(listId, dutchWord, englishTranslation);
+  const result = db.prepare(query).run(listId, dutchWord, englishTranslation, notes || null);
 
   // Update the list's updated_at timestamp
   db.prepare('UPDATE word_lists SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(listId);
@@ -115,18 +116,19 @@ export function createWord(
 export function updateWord(
   id: number,
   dutchWord: string,
-  englishTranslation: string
+  englishTranslation: string,
+  notes?: string
 ): Word | undefined {
   const word = getWordById(id);
   if (!word) return undefined;
 
   const query = `
     UPDATE words
-    SET dutch_word = ?, english_translation = ?
+    SET dutch_word = ?, english_translation = ?, notes = ?
     WHERE id = ?
   `;
 
-  db.prepare(query).run(dutchWord, englishTranslation, id);
+  db.prepare(query).run(dutchWord, englishTranslation, notes || null, id);
 
   // Update the list's updated_at timestamp
   db.prepare('UPDATE word_lists SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(word.list_id);
@@ -157,12 +159,12 @@ export function searchWords(listId: number, searchTerm: string): Word[] {
   const query = `
     SELECT * FROM words
     WHERE list_id = ?
-      AND (dutch_word LIKE ? OR english_translation LIKE ?)
+      AND (dutch_word LIKE ? OR english_translation LIKE ? OR notes LIKE ?)
     ORDER BY created_at DESC
   `;
 
   const searchPattern = `%${searchTerm}%`;
-  return db.prepare(query).all(listId, searchPattern, searchPattern) as Word[];
+  return db.prepare(query).all(listId, searchPattern, searchPattern, searchPattern) as Word[];
 }
 
 // ==================== QUIZ QUERIES ====================
